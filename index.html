@@ -1,0 +1,209 @@
+<html>
+<head>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Koulen&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #000;
+        }
+
+        h1, h2, h3,h4,h5,h6 {
+            font-family: 'Koulen', cursive;           
+        }
+
+        .frontTitle {
+            font-size: 10vh;
+        }
+
+        .frontText {
+            font-size: 3vh;
+        }
+
+        .frontButton {
+            font-family: 'Koulen', cursive;  
+            font-size: 4vh;
+        }
+        
+        .recommedationTitle{
+            font-size: 6vh;
+        }
+
+        .backgroundImage {
+            height: 100%;
+            width: 60vw;
+            min-width: 500px;
+            margin:0 auto;
+            color : #fff;            
+            background-color: transparent;
+        }
+
+        .spacer {
+            padding: 2vw;
+        }
+
+        .video {
+            height: 100%;
+            width: 60vw;
+            min-width: 500px;
+            margin: 0px auto;                
+            object-fit: cover;
+            padding: 0px;
+            position: absolute;
+            z-index: -100000;
+        }
+
+        .centered {
+            text-align: center;
+        }
+
+        .space-top {
+            padding-top: 10vh;
+        }
+
+        .artistbox {
+            background-color: darkgray;
+            background-size: cover;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto;           
+        }
+        
+    </style>
+
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"
+  		integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+  		crossorigin="anonymous"></script>
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+	<script type="text/javascript" src="jaccard.js"></script>	
+    <script type="text/javascript" src="actions.js"></script>	
+    
+</head>
+<body>
+        <div class="backgroundImage">
+            <video autoplay="autoplay" class="video" loop="1" muted="" src="videos/bubble.mp4" style="max-width: 100%;"></video>
+            <div class="container-fluid spacer">
+                <div id="cover">
+                    <div class="row">
+                        <div class="clearfix"></div>
+                        <div class="col-12 centered space-top">
+                            <h1 class="frontTitle">Are You Ready to Pick Your Artist?</h1>
+                            <p class="frontText">A random list of artist will be shown on the screen and you need to choose, does it become an artist according to your liking?</p>
+                        </div>                    
+                    </div>
+                    <div class="row">
+                        <div class="col-12 centered space-top">
+                            <button type="button" id="readyButton" class="btn btn-danger frontButton">Ready!</button>
+                        </div>                    
+                    </div>
+                </div>
+                <div id="question" style="display: none;">
+                    <div class="row">
+                        <div class="clearfix"></div>
+                        <div class="col-12 centered space-top">
+                            <div class="artistbox" artist-id="">
+                                <h3 class="artistname">Artist Name 1</h3>
+                                <h2 class="artistid">Artist Id 1</h2>
+                            </div>
+                        </div>                    
+                    </div>
+                    <div class="row">
+                        <div class="col-12 centered space-top">
+                            <button type="button" id="yesButton" class="btn btn-primary frontButton">Yeah!</button>
+                            <button type="button" id="noButton" class="btn btn-danger frontButton">Nah!</button>
+                        </div>                    
+                    </div>
+                </div>
+                <div id="recommendation" style="display: none;">
+                    <div></div>
+                    <div class="row">
+                        <div class="clearfix"></div>
+                        <div class="col-12 centered space-top">
+                            <h2 class="recommedationTitle">Thanks! You May Like These Artist too..</h2>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="clearfix"></div>
+                        <div class="col-12 centered space-top" id="recommendationArtist">
+                            Artist Recommendation Here..
+                        </div>                    
+                    </div>                    
+                </div>
+            </div>            
+        </div>
+
+
+	<script>
+
+		var proxy = 'https://cors-anywhere.herokuapp.com/';
+		var getData = 'https://s3.amazonaws.com/f1fs001-aws/TrainingData.csv?tags=json';
+        var postData = 'https://f1func-001.azurewebsites.net/api/TrainingDataUpdate?code=2EiVjdBauREP4kyVOXLUDLYCJRjJ1Ud/e6LLqL8YFBg0JP9kTU4XTw==';
+        var dataSource;
+
+        var convertData = function(data) {
+            let input = data;
+            let lines = input.split('\r\n')
+            let header = lines[0].split(',') 
+            let output = lines.slice(1)
+            .map(line => {
+                const fields = line.split(',')
+                return Object.fromEntries(header.map((h, i) => [h, fields[i]]))      
+            });
+
+            return output;
+        }
+
+        var requestData = function(){
+            return $.ajax({
+            url: proxy+getData,
+            async: false,
+            headers: { 
+                'Access-Control-Allow-Credentials' : true,
+                'Access-Control-Allow-Origin': '*', 
+                'Access-Control-Allow-Methods' : '*',
+                "Access-Control-Allow-Headers" : "Origin, X-Requested-With",
+                'Accept' : 'text/csv; charset=utf-8',
+                'Content-Type' : 'text/csv; charset=utf-8' }, //add this line
+            type: 'GET',             
+            crossDomain : true,
+            error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                alert("Status: " + textStatus); alert("Error: " + errorThrown); 
+                }       
+            })
+            .done(function(response) {
+                dataSource = convertData(response);
+                
+                var a = actions(dataSource);
+                a.readyButtonClicked();
+                a.yesButtonClicked();
+                a.noButtonClicked();
+            });
+        };
+        
+        var responData = function(data){
+            return $.ajax({
+            url: proxy+postData,
+            data: data,
+            async: false,
+            headers: { 
+                'Access-Control-Allow-Credentials' : true,
+                'Access-Control-Allow-Origin': '*', 
+                'Access-Control-Allow-Methods' : '*',
+                "Access-Control-Allow-Headers" : "Origin, X-Requested-With",
+                'Content-Type' : 'application/json; charset=utf-8' }, //add this line
+            type: 'POST',
+            crossDomain : true,
+            error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                alert("Status: " + textStatus); alert("Error: " + errorThrown); 
+                }       
+            })
+            .done(function(response) {
+                console.log(response);
+            });
+            
+        }
+
+        requestData();
+        
+	</script>
+</body>
+</html>
